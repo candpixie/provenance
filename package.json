@@ -9,9 +9,12 @@
   "scripts": {
     "detect": "tsx src/cli.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "build:ext": "node build.mjs",
+    "watch:ext": "node build.mjs --watch"
   },
   "devDependencies": {
+    "esbuild": "^0.24.2",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"

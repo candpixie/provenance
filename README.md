@@ -56,10 +56,28 @@ npm test                            # the engine is pure + fully unit-tested
 - **Coverage is the moat, and it's young.** ~18 fingerprints today. Real coverage
   comes from harvesting ground truth: generate N sites per builder, diff them.
 
+## Browser extension
+
+Reads the **rendered DOM** of the active tab (so it sees SPA content static fetch
+misses) and runs the same engine. Manifest V3, `activeTab` + `scripting` only.
+
+```bash
+npm install
+node extension/make-icons.mjs   # generate icons (one-time)
+npm run build:ext               # bundle extension/popup.js
+```
+
+Then: `chrome://extensions` → enable **Developer mode** → **Load unpacked** →
+select `extension/`. Pin it, open any site, click the diamond.
+
+Note: the extension reads the DOM, not response headers, so header-only signals
+(x-wix, x-vercel-id) are skipped there. The CLI path keeps full header coverage.
+
 ## Roadmap
 
-- [ ] Browser extension (reads the rendered DOM directly — best signal, no fetch)
+- [x] Browser extension (reads the rendered DOM directly — best signal, no fetch)
 - [ ] `/api/detect` route + minimal web UI (paste URL → verdict)
-- [ ] Headless-render fallback for SPA shells
+- [ ] Capture response headers in the extension (declarativeNetRequest/webRequest)
+- [ ] Headless-render fallback for SPA shells (CLI path)
 - [ ] Ground-truth harness: auto-generate sites per builder, auto-extract signatures
 - [ ] (later) optional taste score as a downstream feature
