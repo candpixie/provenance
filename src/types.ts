@@ -13,13 +13,15 @@ export type SignalType =
   | "html"
   | "script"
   | "asset"
-  | "attr";
+  | "attr"
+  | "url"; // matches the page's own address (served-from), not a link in the body
 
 export interface Signal {
   type: SignalType;
   pattern: string; // regex source (case-insensitive). For "header" use "name:valueRegex".
   weight: number; // contribution to the builder's score (definitive ~0.9, supporting ~0.2-0.4)
   note: string; // human-readable evidence description
+  definitive?: boolean; // a marker only this builder ships — required to NAME a maker
 }
 
 export type Category =
@@ -42,6 +44,7 @@ export interface Evidence {
   note: string;
   weight: number;
   matched: string; // the actual text that matched, for receipts
+  definitive: boolean;
 }
 
 export interface Detection {
@@ -50,6 +53,7 @@ export interface Detection {
   category: Category;
   score: number;
   confidence: number; // 0..1
+  definitive: boolean; // at least one definitive signal matched
   evidence: Evidence[];
 }
 

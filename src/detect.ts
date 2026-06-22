@@ -17,6 +17,11 @@ function matchSignal(sig: Signal, page: PageInput): string | null {
     return new RegExp(valuePattern, "i").test(value) ? `${name}: ${value}` : null;
   }
 
+  if (sig.type === "url") {
+    const u = page.url ?? "";
+    return new RegExp(sig.pattern, "i").test(u) ? u : null;
+  }
+
   if (sig.type === "metaGenerator") {
     const re = new RegExp(
       `<meta[^>]+name=["']generator["'][^>]+content=["']([^"']*${sig.pattern}[^"']*)["']`,
@@ -26,9 +31,37 @@ function matchSignal(sig: Signal, page: PageInput): string | null {
     return m ? m[1] : null;
   }
 
-  // html / script / asset / attr all reduce to a regex over the raw HTML.
-  const m = html.match(new RegExp(sig.pattern, "i"));
-  return m ? truncate(m[0]) : null;
+  // The rest must match a REAL resource/attribute, not a string in prose or a
+  // quoted code sample. This is the main defense against false positives (a
+  // tutorial mentioning gptengineer.js must not register as Lovable).
+  for (const re of effectiveRegexes(sig)) {
+    const m = html.match(re);
+    if (m) return truncate(m[1] ?? m[0]);
+  }
+  return null;
+}
+
+// Build the regex(es) that bind a signal to an actual resource position.
+function effectiveRegexes(sig: Signal): RegExp[] {
+  const p = sig.pattern;
+  switch (sig.type) {
+    case "script":
+      // only inside <script ... src="...PATTERN...">
+      return [new RegExp(`<script\\b[^>]*\\bsrc\\s*=\\s*["'][^"']*(${p})`, "i")];
+    case "asset":
+      // inside an attribute URL (src/href/srcset/poster) or a CSS url()
+      return [
+        new RegExp(`(?:src|href|srcset|poster|content)\\s*=\\s*["'][^"']*(${p})`, "i"),
+        new RegExp(`url\\(\\s*["']?[^"')]*(${p})`, "i"),
+      ];
+    case "attr":
+      // must sit at an attribute boundary, not mid-word in text
+      return [new RegExp(`(?:^|[\\s"'<])(${p})`, "i")];
+    case "html":
+    default:
+      // structural markers a builder injects (comments, data blobs) — loose by design
+      return [new RegExp(`(${p})`, "i")];
+  }
 }
 
 function truncate(s: string, n = 140): string {
@@ -46,11 +79,14 @@ export function detect(page: PageInput): Detection[] {
   for (const fp of FINGERPRINTS) {
     const evidence: Evidence[] = [];
     let score = 0;
+    let definitive = false;
     for (const sig of fp.signals) {
       const matched = matchSignal(sig, page);
       if (matched !== null) {
         score += sig.weight;
-        evidence.push({ note: sig.note, weight: sig.weight, matched });
+        const isDef = sig.definitive === true;
+        definitive ||= isDef;
+        evidence.push({ note: sig.note, weight: sig.weight, matched, definitive: isDef });
       }
     }
     if (score > 0) {
@@ -60,6 +96,7 @@ export function detect(page: PageInput): Detection[] {
         category: fp.category,
         score: round(score),
         confidence: Math.min(1, round(score)),
+        definitive,
         evidence: evidence.sort((a, b) => b.weight - a.weight),
       });
     }
@@ -87,8 +124,10 @@ export interface Verdict {
 export function verdict(page: PageInput): Verdict {
   const all = detect(page);
   const makerHits = all.filter((d) => MAKER_CATEGORIES.includes(d.category));
-  const makers = makerHits.filter((d) => d.confidence >= MAKER_CONFIDENCE_FLOOR);
-  const weakMakerSignals = makerHits.filter((d) => d.confidence < MAKER_CONFIDENCE_FLOOR);
+  // To NAME a maker we require BOTH a definitive marker and enough confidence.
+  // Everything else is downgraded to "weak signals" and never put on the verdict.
+  const makers = makerHits.filter((d) => d.definitive && d.confidence >= MAKER_CONFIDENCE_FLOOR);
+  const weakMakerSignals = makerHits.filter((d) => !(d.definitive && d.confidence >= MAKER_CONFIDENCE_FLOOR));
   const stack = all.filter((d) => d.category === "framework");
   const hosts = all.filter((d) => d.category === "host");
 

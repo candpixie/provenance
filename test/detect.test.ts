@@ -90,3 +90,61 @@ describe("detect", () => {
     expect(detect(FRAMER)).toEqual(detect(FRAMER));
   });
 });
+
+// The credibility suite: pages that LOOK like a builder but aren't.
+// A false "Built with X" is worse than admitting we don't know.
+describe("no false positives", () => {
+  it("does not flag a tutorial that quotes gptengineer.js in a code block", () => {
+    const blog: PageInput = {
+      url: "https://myblog.dev/how-lovable-works",
+      html: `<!doctype html><html><head><meta name="generator" content="Hugo 0.1"/></head>
+        <body><article><h1>How Lovable works</h1>
+        <p>It injects a script tag:</p>
+        <pre><code>&lt;script src="https://cdn.gpteng.co/gptengineer.js"&gt;&lt;/script&gt;</code></pre>
+        <p>and you can host it on lovableproject.com.</p>
+        </article></body></html>`,
+      headers: {},
+    };
+    const v = verdict(blog);
+    expect(v.maker).toBeNull();
+    expect(v.makers.find((d) => d.id === "lovable")).toBeUndefined();
+  });
+
+  it("does not flag a site that merely links to bolt.new / carrd.co", () => {
+    const linker: PageInput = {
+      url: "https://example.com",
+      html: `<html><body>
+        <a href="https://bolt.new">try bolt</a>
+        <a href="https://mysite.carrd.co">my other site</a>
+        <p>I love framer and squarespace for design.</p>
+        </body></html>`,
+      headers: {},
+    };
+    const v = verdict(linker);
+    expect(v.maker).toBeNull();
+  });
+
+  it("does not name a maker from weak signals alone (no definitive marker)", () => {
+    // Webflow w- class + asset CDN but NO generator and NO data-wf attribute.
+    const partial: PageInput = {
+      url: "https://example.com",
+      html: `<html><body><div class="nav w-nav"></div>
+        <img src="https://assets.website-files.com/x.png"/></body></html>`,
+      headers: {},
+    };
+    const v = verdict(partial);
+    expect(v.maker).toBeNull();
+    expect(v.weakMakerSignals.some((d) => d.id === "webflow")).toBe(true);
+  });
+
+  it("only names a deployment-domain maker when the PAGE is served from it", () => {
+    const served: PageInput = { url: "https://app.lovableproject.com/", html: "<html></html>", headers: {} };
+    const merelyLinks: PageInput = {
+      url: "https://example.com",
+      html: `<a href="https://x.lovableproject.com">x</a>`,
+      headers: {},
+    };
+    expect(verdict(served).maker?.id).toBe("lovable");
+    expect(verdict(merelyLinks).maker).toBeNull();
+  });
+});
