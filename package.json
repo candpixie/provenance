@@ -1,0 +1,19 @@
+{
+  "name": "provenance",
+  "version": "0.1.0",
+  "description": "Detect which AI agent or builder made a website (provenance / fingerprinting).",
+  "type": "module",
+  "bin": {
+    "provenance": "src/cli.ts"
+  },
+  "scripts": {
+    "detect": "tsx src/cli.ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}
