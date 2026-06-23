@@ -110,7 +110,12 @@ const MAKER_CATEGORIES: Category[] = ["ai-coding-agent", "ai-site-builder", "no-
 // Anything weaker is noise (e.g. a blog link exposing /wp-json on a Framer site).
 const MAKER_CONFIDENCE_FLOOR = 0.5;
 
+export type VerdictKind = "named" | "inferred" | "clean" | "unknown";
+
 export interface Verdict {
+  kind: VerdictKind;
+  headline: string; // the one-line answer, shared by CLI / extension / web
+  detail: string; // the honest explanation under it
   maker: Detection | null; // best guess at who built it
   inferredAgent: string | null; // heuristic when no explicit maker marker exists
   makers: Detection[];
@@ -143,5 +148,34 @@ export function verdict(page: PageInput): Verdict {
     }
   }
 
-  return { maker: makers[0] ?? null, inferredAgent, makers, weakMakerSignals, stack, hosts, all };
+  const maker = makers[0] ?? null;
+
+  // One honest message, computed once, reused everywhere. "No fingerprint" is a
+  // correct answer (hand-coded / AI-assistant-built), not a failure — say so.
+  let kind: VerdictKind;
+  let headline: string;
+  let detail: string;
+  if (maker) {
+    kind = "named";
+    headline = `Built with ${maker.name}`;
+    detail = `${pct(maker.confidence)} confidence · backed by a definitive marker`;
+  } else if (inferredAgent) {
+    kind = "inferred";
+    headline = "Best guess: AI coding agent";
+    detail = "Stack matches the v0 / Lovable / Bolt family, but there's no definitive marker. Stacks suggest, they don't prove.";
+  } else if (stack.length > 0) {
+    kind = "clean";
+    headline = "No builder fingerprint";
+    detail = "Hand-coded, or built with an AI coding assistant (Claude, Cursor, Copilot). These write plain code and leave no fingerprint by design. This is a correct result, not a miss.";
+  } else {
+    kind = "unknown";
+    headline = "No fingerprint found";
+    detail = "Likely hand-built, or made with a builder we don't fingerprint yet.";
+  }
+
+  return { kind, headline, detail, maker, inferredAgent, makers, weakMakerSignals, stack, hosts, all };
+}
+
+function pct(n: number): string {
+  return `${Math.round(n * 100)}%`;
 }

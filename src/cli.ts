@@ -35,14 +35,13 @@ async function main() {
   console.log("");
 
   if (v.maker) {
-    console.log(`${c.bold("Built with:")} ${line(v.maker)}`);
+    console.log(`${c.bold(v.headline)} ${c.green(pct(v.maker.confidence))} ${c.dim(`[${v.maker.category}]`)}`);
     for (const e of v.maker.evidence.slice(0, 4)) {
       console.log(`  ${c.dim("·")} ${e.note} ${c.dim(`(${e.matched})`)}`);
     }
-  } else if (v.inferredAgent) {
-    console.log(`${c.bold("Built with:")} ${c.yellow(v.inferredAgent)}`);
   } else {
-    console.log(`${c.bold("Built with:")} ${c.dim("no known builder fingerprint matched")}`);
+    console.log(v.kind === "inferred" ? c.yellow(v.headline) : c.bold(v.headline));
+    console.log(c.dim(v.detail));
   }
 
   if (v.makers.length > 1) {

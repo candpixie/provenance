@@ -2,3 +2,7 @@ node_modules/
 *.log
 .DS_Store
 extension/popup.js
+.next/
+next-env.d.ts
+*.tsbuildinfo
+.vercel
