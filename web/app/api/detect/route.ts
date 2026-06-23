@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { fetchPage } from "../../../../src/fetch.js";
-import { verdict } from "../../../../src/detect.js";
+import { fetchPage } from "@/lib/engine/fetch.js";
+import { verdict } from "@/lib/engine/detect.js";
 
 export const runtime = "nodejs";
 export const maxDuration = 20;

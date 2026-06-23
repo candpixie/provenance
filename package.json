@@ -2,6 +2,8 @@
   "name": "provenance",
   "version": "0.1.0",
   "description": "Detect which AI agent or builder made a website (provenance / fingerprinting).",
+  "license": "MIT",
+  "author": "Candy Xie",
   "type": "module",
   "bin": {
     "provenance": "src/cli.ts"

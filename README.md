@@ -81,3 +81,7 @@ Note: the extension reads the DOM, not response headers, so header-only signals
 - [ ] Headless-render fallback for SPA shells (CLI path)
 - [ ] Ground-truth harness: auto-generate sites per builder, auto-extract signatures
 - [ ] (later) optional taste score as a downstream feature
+
+## License
+
+MIT © Candy Xie. Use it, fork it, build on it. If it's useful, a star helps.

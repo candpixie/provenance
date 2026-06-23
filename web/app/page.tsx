@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { Verdict } from "../../src/detect.js";
-import type { Detection } from "../../src/types.js";
+import type { Verdict } from "@/lib/engine/detect.js";
+import type { Detection } from "@/lib/engine/types.js";
 
 const EXAMPLES = ["framer.com", "webflow.com", "squarespace.com", "wordpress.org"];
 const CATEGORY: Record<string, string> = {

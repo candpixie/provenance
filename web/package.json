@@ -2,6 +2,9 @@
   "name": "provenance-web",
   "private": true,
   "scripts": {
+    "sync": "node scripts/sync-engine.mjs",
+    "predev": "node scripts/sync-engine.mjs",
+    "prebuild": "node scripts/sync-engine.mjs",
     "dev": "next dev",
     "build": "next build",
     "start": "next start"
